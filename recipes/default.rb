@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: zookeeper-ubuntu
+# Cookbook Name:: zookeeper
 # Recipe:: default
 #
 # Copyright 2011, Francesco Salbaroli

@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: zookeeper-ubuntu
+# Cookbook Name:: zookeeper
 # Recipe:: server
 #
 # Copyright 2011, Francesco Salbaroli
@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-include_recipe "zookeeper-ubuntu"
+include_recipe "zookeeper"
 
 server_hosts = node.set['zookeeper']['server']['hosts']
 
