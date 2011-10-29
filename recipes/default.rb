@@ -17,9 +17,7 @@
 # limitations under the License.
 #
 include_recipe "apt"
-
-# install pre-requisites
-package "default-jre"
+include_recipe "java"
 
 # install zookeeper
 package "zookeeper"
