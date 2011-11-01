@@ -35,7 +35,11 @@ if zookeeper_chef_environment == "_default" then
    raise "Can't run on default environment"
 end
 
-node_list = search(:node, "chef_environment:#{zookeeper_chef_environment}")
+if Chef::Config.solo then
+   node_list = [node]
+else
+   node_list = search(:node, "chef_environment:#{zookeeper_chef_environment}")
+end
 
 if node_list.empty? then
    raise "No nodes matching the search pattern!"

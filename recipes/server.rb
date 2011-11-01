@@ -36,12 +36,14 @@ directory data_dir do
    action :create
 end
 
-template "#{config_dir}/myid" do
-   source "myid.erb"
-   mode "0644"
-   owner "zookeeper"
-   group "zookeeper"
-   variables({:myid => myid})
+if server_hosts.size > 1 then
+   template "#{config_dir}/myid" do
+      source "myid.erb"
+      mode "0644"
+      owner "zookeeper"
+      group "zookeeper"
+      variables({:myid => myid})
+   end
 end
 
 package "zookeeperd"
