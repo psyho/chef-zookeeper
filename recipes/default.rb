@@ -26,7 +26,7 @@ package "zookeeper"
 package "zookeeperd"
 
 
-servers = search(:node, "role:#{node[:environment]} and role:zookeeper")
+servers = search(:node, "role:#{node[:environment]} and role:zookeeper").select{|s| node[:application][:name] == s[:application][:name] }
 
 # set myid if not already set
 if node['zookeeper']['myid'].nil?
