@@ -21,7 +21,6 @@ include_recipe "java"
 
 # install zookeeper
 package "zookeeper"
-<<<<<<< HEAD
 
 if node['zookeeper']['environment']['name'].nil? || node['zookeeper']['environment']['name'].empty? then
    log "Environment variable NOT SET, defaulting to current node environment" 
@@ -44,24 +43,6 @@ end
 
 if node_list.empty? then
    raise "No nodes matching the search pattern!"
-=======
-package "zookeeperd"
-
-
-servers = search(:node, "role:#{node[:environment]} and role:zookeeper").select{|s| node[:application][:name] == s[:application][:name] }
-
-# set myid if not already set
-if node['zookeeper']['myid'].nil?
-  myid = 1
-  servers.each do |s|
-    if s.name != node.name && s['zookeeper']['myid'] && myid <= s['zookeeper']['myid'].to_i
-      myid = s['zookeeper']['myid'].to_i + 1
-    end
-  end
-  node['zookeeper']['myid'] = myid
-  # set myid of this node in the server list -- used to create zoo.cfg
-  servers.each{|s| s['zookeeper']['myid'] = myid if s.name == node.name}
->>>>>>> a7b79df4920a42bf524de9822e767cf30bb9600e
 end
 
 data_dir = node['zookeeper']['data_dir']
