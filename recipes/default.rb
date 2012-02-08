@@ -21,6 +21,7 @@ include_recipe "java"
 
 # install zookeeper
 package "zookeeper"
+<<<<<<< HEAD
 
 if node['zookeeper']['environment']['name'].nil? || node['zookeeper']['environment']['name'].empty? then
    log "Environment variable NOT SET, defaulting to current node environment" 
@@ -43,22 +44,30 @@ end
 
 if node_list.empty? then
    raise "No nodes matching the search pattern!"
+=======
+package "zookeeperd"
+
+
+servers = search(:node, "role:#{node[:environment]} and role:zookeeper").select{|s| node[:application][:name] == s[:application][:name] }
+
+# set myid if not already set
+if node['zookeeper']['myid'].nil?
+  myid = 1
+  servers.each do |s|
+    if s.name != node.name && s['zookeeper']['myid'] && myid <= s['zookeeper']['myid'].to_i
+      myid = s['zookeeper']['myid'].to_i + 1
+    end
+  end
+  node['zookeeper']['myid'] = myid
+  # set myid of this node in the server list -- used to create zoo.cfg
+  servers.each{|s| s['zookeeper']['myid'] = myid if s.name == node.name}
+>>>>>>> a7b79df4920a42bf524de9822e767cf30bb9600e
 end
 
-# DEBUG
-node_list.each_with_index do |host, idx|
-   puts "Host: #{host.name} - Index: #{idx}"
-end
-# END DEBUG
-
-server_hosts = node_list.map{|host| host.name}.sort
-
-node.set['zookeeper']['server']['hosts'] = server_hosts
-
-config_dir = "/etc/zookeeper/conf.#{zookeeper_chef_environment}_#{node['deployment_id']}"
-node.set['zookeeper']['config']['dir'] = config_dir
-client_port = node['zookeeper']['client']['port']
-data_dir = node['zookeeper']['data']['dir']
+data_dir = node['zookeeper']['data_dir']
+config_dir = node['zookeeper']['config_dir']
+client_port = node['zookeeper']['client_port']
+myid = node['zookeeper']['myid']
 
 directory config_dir do
    owner "root"
@@ -68,7 +77,7 @@ directory config_dir do
 end
 
 template_variables = {
-   :zookeeper_server_hosts      => server_hosts,
+   :zookeeper_servers           => servers,
    :zookeeper_data_dir          => data_dir,
    :zookeeper_client_port       => client_port
 }
@@ -83,14 +92,24 @@ template_variables = {
    end
 end
 
-# update-alternatives install
-execute "update-alternatives" do
-  command "update-alternatives --install /etc/zookeeper/conf zookeeper-conf #{config_dir} 50"
-  action :run
+directory data_dir do
+   owner "zookeeper"
+   group "zookeeper"
+   mode "0755"
+   action :create
 end
 
-# update-alternatives set
-execute "update-alternatives" do
-  command "update-alternatives --set zookeeper-conf #{config_dir}"
-  action :run
+template "#{config_dir}/myid" do
+   source "myid.erb"
+   mode "0644"
+   owner "zookeeper"
+   group "zookeeper"
+   variables({:myid => myid})
 end
+
+service "zookeeper" do
+#   provider Chef::Provider::Service::Upstart
+   action :restart
+   running true
+   supports :status => true, :restart => true
+end 

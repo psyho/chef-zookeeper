@@ -25,8 +25,14 @@ clientPort=<%= @zookeeper_client_port %>
 #server.2=zookeeper2:2888:3888
 #server.3=zookeeper3:2888:3888
 
+<<<<<<< HEAD
 <%- @zookeeper_server_hosts.each_with_index do |host, idx| %>
 server.<%= idx + 1 %>=<%= host %>:2888:3888
+=======
+<%- if @zookeeper_servers && @zookeeper_servers.size > 1 %>
+<%- @zookeeper_servers.each do |host| %>
+server.<%= host['zookeeper']['myid'] %>=<%= host['ec2']['local_ipv4'] %>:2888:3888
+>>>>>>> a7b79df4920a42bf524de9822e767cf30bb9600e
 <%- end %>
 <%- end %>
 <%- end %>

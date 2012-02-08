@@ -1,4 +1,4 @@
-default['zookeeper']['data']['dir'] = "/var/lib/zookeeper"
-default['zookeeper']['client']['port'] = "2181"
-default['deployment_id'] = "1"
-default['zookeeper']['environment']['name'] = ""
+default['zookeeper']['config_dir'] = "/etc/zookeeper/conf"
+default['zookeeper']['data_dir'] = "/var/lib/zookeeper"
+default['zookeeper']['client_port'] = "2181"
+default['zookeeper']['myid'] = nil
