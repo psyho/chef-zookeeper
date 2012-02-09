@@ -19,8 +19,10 @@
 include_recipe "apt"
 include_recipe "java"
 
-# install zookeeper
-package "zookeeper"
+package "unzip" do
+  action :install
+end
+
 
 if node['zookeeper']['environment']['name'].nil? || node['zookeeper']['environment']['name'].empty? then
    log "Environment variable NOT SET, defaulting to current node environment" 
@@ -45,16 +47,51 @@ if node_list.empty? then
    raise "No nodes matching the search pattern!"
 end
 
+app_root_dir = node['zookeeper']['root_dir']
 data_dir = node['zookeeper']['data_dir']
 config_dir = node['zookeeper']['config_dir']
 client_port = node['zookeeper']['client_port']
 myid = node['zookeeper']['myid']
+servers = node['zookeeper']['server_list']
 
-directory config_dir do
-   owner "root"
-   group "root"
+directory app_root_dir do
+   owner "zookeeper"
+   group "zookeeper"
    mode "0755"
    action :create
+end
+
+directory config_dir do
+   owner "zookeeper"
+   group "zookeeper"
+   mode "0755"
+   action :create
+end
+
+directory data_dir do
+   owner "zookeeper"
+   group "zookeeper"
+   mode "0755"
+   action :create
+end
+
+bash "retrieve current zookeeper tarball" do
+  user "root"
+  cwd "/tmp"
+  code %(s3cmd get --force s3://#{node.deploybucket}/deployment/zookeeper/zookeeper-#{node.zookeeper.version}.tgz)
+end
+
+bash "untar zookeeper" do
+  user "root"
+  cwd "/tmp"
+  code %(tar -zxf /tmp/zookeeper-#{node.zookeeper.version}.tgz)
+  not_if { File.exists? "/tmp/zookeeper-#{node.zookeeper.version}" }
+end
+
+bash "copy zookeeper root" do
+  user "root"
+  cwd "/tmp"
+  code %(cp -r /tmp/zookeeper-#{node.zookeeper.version}/* /mnt/local/zookeeper)
 end
 
 template_variables = {
@@ -63,7 +100,7 @@ template_variables = {
    :zookeeper_client_port       => client_port
 }
 
-%w{ configuration.xsl  environment  log4j.properties zoo.cfg }.each do |templ|
+%w{ configuration.xsl log4j.properties zoo.cfg }.each do |templ|
    template "#{config_dir}/#{templ}" do
       source "#{templ}.erb"
       mode "0644"
@@ -71,13 +108,6 @@ template_variables = {
       group "root"
       variables(template_variables)
    end
-end
-
-directory data_dir do
-   owner "zookeeper"
-   group "zookeeper"
-   mode "0755"
-   action :create
 end
 
 template "#{config_dir}/myid" do
@@ -88,9 +118,8 @@ template "#{config_dir}/myid" do
    variables({:myid => myid})
 end
 
-service "zookeeper" do
-#   provider Chef::Provider::Service::Upstart
-   action :restart
-   running true
-   supports :status => true, :restart => true
+bash "restart zookeeper" do
+  user "root"
+  cwd "#{app_root_dir}"
+  code %(bin/zkServer.sh restart)
 end 
