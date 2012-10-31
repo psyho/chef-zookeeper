@@ -16,35 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-include_recipe "apt"
-include_recipe "java"
 
-package "unzip" do
+package "dev-java/sun-jdk" do
   action :install
-end
-
-
-if node['zookeeper']['environment']['name'].nil? || node['zookeeper']['environment']['name'].empty? then
-   log "Environment variable NOT SET, defaulting to current node environment" 
-   zookeeper_chef_environment = node.chef_environment
-else
-   zookeeper_chef_environment = node['zookeeper']['environment']['name']
-end
-
-puts "Environment: #{zookeeper_chef_environment}"
-
-if zookeeper_chef_environment == "_default" then
-   raise "Can't run on default environment"
-end
-
-if Chef::Config.solo then
-   node_list = [node]
-else
-   node_list = search(:node, "chef_environment:#{zookeeper_chef_environment}")
-end
-
-if node_list.empty? then
-   raise "No nodes matching the search pattern!"
 end
 
 app_root_dir = node['zookeeper']['root_dir']
@@ -54,72 +28,64 @@ client_port = node['zookeeper']['client_port']
 myid = node['zookeeper']['myid']
 servers = node['zookeeper']['server_list']
 
-directory app_root_dir do
-   owner "zookeeper"
-   group "zookeeper"
-   mode "0755"
-   action :create
+user "zookeeper" do
+  system true
+  shell "/bin/false"
 end
 
-directory config_dir do
-   owner "zookeeper"
-   group "zookeeper"
-   mode "0755"
-   action :create
+[app_root_dir, config_dir, data_dir].each do |dir|
+  directory dir do
+    owner "zookeeper"
+    group "zookeeper"
+    mode "0755"
+    action :create
+  end
 end
 
-directory data_dir do
-   owner "zookeeper"
-   group "zookeeper"
-   mode "0755"
-   action :create
-end
-
-bash "retrieve current zookeeper tarball" do
+cookbook_file "/tmp/zookeeper.tar.gz" do
   user "root"
-  cwd "/tmp"
-  code %(s3cmd get --force s3://#{node.deploybucket}/deployment/zookeeper/zookeeper-#{node.zookeeper.version}.tgz)
+  source "zookeeper-#{node.zookeeper.version}.tar.gz"
 end
 
 bash "untar zookeeper" do
   user "root"
   cwd "/tmp"
-  code %(tar -zxf /tmp/zookeeper-#{node.zookeeper.version}.tgz)
+  code %(tar -zxf /tmp/zookeeper.tgz)
   not_if { File.exists? "/tmp/zookeeper-#{node.zookeeper.version}" }
 end
 
 bash "copy zookeeper root" do
   user "root"
   cwd "/tmp"
-  code %(cp -r /tmp/zookeeper-#{node.zookeeper.version}/* /mnt/local/zookeeper)
+  code %(cp -r /tmp/zookeeper-#{node.zookeeper.version}/* #{root_dir})
 end
 
 template_variables = {
-   :zookeeper_servers           => servers,
-   :zookeeper_data_dir          => data_dir,
-   :zookeeper_client_port       => client_port
+  :zookeeper_servers           => servers,
+  :zookeeper_data_dir          => data_dir,
+  :zookeeper_client_port       => client_port
 }
 
 %w{ configuration.xsl log4j.properties zoo.cfg }.each do |templ|
-   template "#{config_dir}/#{templ}" do
-      source "#{templ}.erb"
-      mode "0644"
-      owner "root"
-      group "root"
-      variables(template_variables)
-   end
+  template "#{config_dir}/#{templ}" do
+    source "#{templ}.erb"
+    mode "0644"
+    owner "root"
+    group "root"
+    variables(template_variables)
+  end
 end
 
 template "#{config_dir}/myid" do
-   source "myid.erb"
-   mode "0644"
-   owner "zookeeper"
-   group "zookeeper"
-   variables({:myid => myid})
+  source "myid.erb"
+  mode "0644"
+  owner "zookeeper"
+  group "zookeeper"
+  variables({:myid => myid})
 end
 
 bash "restart zookeeper" do
   user "root"
   cwd "#{app_root_dir}"
   code %(bin/zkServer.sh restart)
-end 
+end
