@@ -17,7 +17,17 @@
 # limitations under the License.
 #
 
-package "dev-java/sun-jdk" do
+p = "/etc/portage/package.license"
+java_package = "dev-java/sun-jdk"
+
+update_file "enable java" do
+  action :append
+  path p
+  body "#{java_package} dlj-1.1"
+  not_if "grep '#{java_package}' #{p}"
+end
+
+package java_package do
   action :install
 end
 
@@ -57,7 +67,7 @@ end
 bash "copy zookeeper root" do
   user "root"
   cwd "/tmp"
-  code %(cp -r /tmp/zookeeper-#{node.zookeeper.version}/* #{root_dir})
+  code "cp -r /tmp/zookeeper-#{node.zookeeper.version}/* #{app_root_dir}"
 end
 
 template_variables = {
