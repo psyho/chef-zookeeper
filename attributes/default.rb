@@ -1,6 +1,7 @@
-default['zookeeper']['version'] = "3.4.4"
-default['zookeeper']['root_dir'] = "/var/lib/zookeeper"
-default['zookeeper']['config_dir'] = "/var/lib/zookeeper/conf"
-default['zookeeper']['data_dir'] = "/var/lib/zookeeper/data"
-default['zookeeper']['client_port'] = "2181"
-default['zookeeper']['myid'] = nil
+zookeeper_version("3.4.4")
+zookeeper_root_dir("/var/lib/zookeeper")
+zookeeper_config_dir("/var/lib/zookeeper/conf")
+zookeeper_data_dir("/var/lib/zookeeper/data")
+zookeeper_client_port("2181")
+zookeeper_myid(nil)
+zookeeper_server_list(nil)
