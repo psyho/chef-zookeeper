@@ -1,0 +1,13 @@
+#!/sbin/runscript
+
+start() {
+  <%= @root_dir %>/bin/zkServer.sh start
+}
+
+stop() {
+  <%= @root_dir %>/bin/zkServer.sh stop
+}
+
+restart() {
+  <%= @root_dir %>/bin/zkServer.sh restart
+}
